@@ -1,20 +1,17 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config'; // <--- Importe isso
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TransactionsModule } from './transactions/transactions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { TransactionsModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
-    // Carrega as variáveis de ambiente (.env)
-    ConfigModule.forRoot({ isGlobal: true }),
-
-    // Nossos Módulos
-    PrismaModule,
-    AuthModule,
+    ConfigModule.forRoot({ isGlobal: true }), // <--- Adicione isso
     TransactionsModule,
+    PrismaModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
