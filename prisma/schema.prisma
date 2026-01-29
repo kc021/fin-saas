@@ -1,0 +1,138 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- USUÁRIOS E PERMISSÕES ---
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  name         String
+  password     String       // Hash da senha
+  createdAt    DateTime     @default(now())
+  
+  // Relacionamento muitos-para-muitos: Um usuário pode estar em várias empresas
+  memberships  TenantUser[]
+
+  @@map("users")
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  document    String?      // CNPJ ou CPF
+  currency    String       @default("BRL")
+  createdAt   DateTime     @default(now())
+
+  users       TenantUser[]
+  accounts    Account[]
+  categories  Category[]
+  transactions Transaction[]
+
+  @@map("tenants")
+}
+
+// Tabela Pivô para conectar Usuários e Empresas com permissões
+model TenantUser {
+  id        String   @id @default(uuid())
+  userId    String
+  tenantId  String
+  role      Role     @default(OWNER) // ADMIN, MEMBER, VIEWER
+
+  user      User     @relation(fields: [userId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, tenantId]) // Um usuário só pode ter um registro por empresa
+  @@map("tenant_users")
+}
+
+// --- FINANCEIRO ---
+
+model Account {
+  id          String        @id @default(uuid())
+  name        String        // Ex: "Banco Itaú", "Caixinha"
+  type        AccountType   @default(CHECKING)
+  initialBalance Decimal    @db.Decimal(15, 2) @default(0)
+  active      Boolean       @default(true)
+  
+  tenantId    String
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  transactions Transaction[]
+
+  createdAt   DateTime      @default(now())
+  
+  @@map("accounts")
+}
+
+model Category {
+  id          String        @id @default(uuid())
+  name        String
+  type        TransactionType // INCOME ou EXPENSE
+  color       String?       // Hex code para gráficos
+  icon        String?
+  
+  tenantId    String
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  description String
+  amount      Decimal         @db.Decimal(15, 2)
+  type        TransactionType
+  status      TransactionStatus @default(PAID)
+  
+  dueDate     DateTime        // Data de competência/vencimento
+  payDate     DateTime?       // Data de pagamento (efetivo)
+
+  // Relacionamentos
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id])
+
+  accountId   String
+  account     Account         @relation(fields: [accountId], references: [id])
+
+  categoryId  String?
+  category    Category?       @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([tenantId, dueDate]) // Índice para relatórios rápidos por data
+  @@map("transactions")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  OWNER
+  ADMIN
+  VIEWER
+}
+
+enum AccountType {
+  CHECKING  // Conta Corrente
+  CASH      // Dinheiro Físico
+  SAVINGS   // Poupança
+  CREDIT    // Cartão de Crédito
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+}
