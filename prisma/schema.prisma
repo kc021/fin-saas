@@ -18,7 +18,6 @@ model User {
   password     String       // Hash da senha
   createdAt    DateTime     @default(now())
   
-  // Relacionamento muitos-para-muitos: Um usuário pode estar em várias empresas
   memberships  TenantUser[]
 
   @@map("users")
@@ -27,7 +26,7 @@ model User {
 model Tenant {
   id          String       @id @default(uuid())
   name        String
-  document    String?      // CNPJ ou CPF
+  document    String?      
   currency    String       @default("BRL")
   createdAt   DateTime     @default(now())
 
@@ -39,17 +38,16 @@ model Tenant {
   @@map("tenants")
 }
 
-// Tabela Pivô para conectar Usuários e Empresas com permissões
 model TenantUser {
   id        String   @id @default(uuid())
   userId    String
   tenantId  String
-  role      Role     @default(OWNER) // ADMIN, MEMBER, VIEWER
+  role      Role     @default(OWNER) 
 
   user      User     @relation(fields: [userId], references: [id])
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
 
-  @@unique([userId, tenantId]) // Um usuário só pode ter um registro por empresa
+  @@unique([userId, tenantId])
   @@map("tenant_users")
 }
 
@@ -57,7 +55,7 @@ model TenantUser {
 
 model Account {
   id          String        @id @default(uuid())
-  name        String        // Ex: "Banco Itaú", "Caixinha"
+  name        String        
   type        AccountType   @default(CHECKING)
   initialBalance Decimal    @db.Decimal(15, 2) @default(0)
   active      Boolean       @default(true)
@@ -74,8 +72,8 @@ model Account {
 model Category {
   id          String        @id @default(uuid())
   name        String
-  type        TransactionType // INCOME ou EXPENSE
-  color       String?       // Hex code para gráficos
+  type        TransactionType 
+  color       String?       
   icon        String?
   
   tenantId    String
@@ -92,10 +90,9 @@ model Transaction {
   type        TransactionType
   status      TransactionStatus @default(PAID)
   
-  dueDate     DateTime        // Data de competência/vencimento
-  payDate     DateTime?       // Data de pagamento (efetivo)
+  dueDate     DateTime        
+  payDate     DateTime?       
 
-  // Relacionamentos
   tenantId    String
   tenant      Tenant          @relation(fields: [tenantId], references: [id])
 
@@ -108,7 +105,7 @@ model Transaction {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  @@index([tenantId, dueDate]) // Índice para relatórios rápidos por data
+  @@index([tenantId, dueDate]) 
   @@map("transactions")
 }
 
@@ -121,10 +118,10 @@ enum Role {
 }
 
 enum AccountType {
-  CHECKING  // Conta Corrente
-  CASH      // Dinheiro Físico
-  SAVINGS   // Poupança
-  CREDIT    // Cartão de Crédito
+  CHECKING  
+  CASH      
+  SAVINGS   
+  CREDIT    
 }
 
 enum TransactionType {
