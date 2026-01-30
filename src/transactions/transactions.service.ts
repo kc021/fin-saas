@@ -1,63 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, TransactionType } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TransactionsService {
   constructor(private prisma: PrismaService) { }
 
-  create(createTransactionDto: CreateTransactionDto) {
-    const { amount, dueDate, payDate, type, ...rest } = createTransactionDto;
-
+  create(createTransactionDto: CreateTransactionDto, tenantId: string) {
     return this.prisma.transaction.create({
       data: {
-        ...rest,
-        amount: new Prisma.Decimal(amount),
-        dueDate: new Date(dueDate),
-        payDate: payDate ? new Date(payDate) : null,
-        type: type as TransactionType,
+        ...createTransactionDto,
+        tenantId, // Vincula automaticamente à empresa do usuário
       },
     });
   }
 
-  findAll() {
-    return this.prisma.transaction.findMany();
-  }
-
-  findOne(id: string) {
-    return this.prisma.transaction.findUnique({
-      where: { id },
+  findAll(tenantId: string) {
+    return this.prisma.transaction.findMany({
+      where: { tenantId }, // SÓ traz dados da empresa logada
+      orderBy: { date: 'desc' }, // Ordena por data (mais recente primeiro)
     });
   }
 
-  update(id: string, updateTransactionDto: UpdateTransactionDto) {
-    const { amount, dueDate, payDate, type, ...rest } = updateTransactionDto;
-    const data: any = { ...rest };
+  async findOne(id: string, tenantId: string) {
+    const transaction = await this.prisma.transaction.findFirst({
+      where: { id, tenantId }, // Garante que o ID pertence à empresa certa
+    });
 
-    if (amount !== undefined) {
-      data.amount = new Prisma.Decimal(amount);
-    }
-    if (dueDate !== undefined) {
-      data.dueDate = new Date(dueDate);
-    }
-    if (payDate !== undefined) {
-      data.payDate = new Date(payDate);
-    }
-    if (type !== undefined) {
-      data.type = type as TransactionType;
+    if (!transaction) {
+      throw new NotFoundException('Transação não encontrada');
     }
 
-    return this.prisma.transaction.update({
-      where: { id },
-      data,
+    return transaction;
+  }
+
+  update(id: string, updateTransactionDto: UpdateTransactionDto, tenantId: string) {
+    // O updateMany garante que só atualiza se o tenantId bater
+    return this.prisma.transaction.updateMany({
+      where: { id, tenantId },
+      data: updateTransactionDto,
     });
   }
 
-  remove(id: string) {
-    return this.prisma.transaction.delete({
-      where: { id },
+  remove(id: string, tenantId: string) {
+    return this.prisma.transaction.deleteMany({
+      where: { id, tenantId },
     });
   }
 }
