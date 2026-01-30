@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // <--- Importe isso
+import { ConfigModule } from '@nestjs/config'; // <--- Importante
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TransactionsModule } from './transactions/transactions.module';
@@ -8,7 +8,7 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // <--- Adicione isso
+    ConfigModule.forRoot({ isGlobal: true }), // <--- Importante
     TransactionsModule,
     PrismaModule,
     AuthModule
