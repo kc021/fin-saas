@@ -11,21 +11,21 @@ export class TransactionsService {
     return this.prisma.transaction.create({
       data: {
         ...createTransactionDto,
-        tenantId, // Vincula automaticamente à empresa do usuário
+        tenantId,
       },
     });
   }
 
   findAll(tenantId: string) {
     return this.prisma.transaction.findMany({
-      where: { tenantId }, // SÓ traz dados da empresa logada
-      orderBy: { date: 'desc' }, // Ordena por data (mais recente primeiro)
+      where: { tenantId },
+      orderBy: { dueDate: 'desc' }, // <--- CORREÇÃO: Mudamos de 'date' para 'dueDate'
     });
   }
 
   async findOne(id: string, tenantId: string) {
     const transaction = await this.prisma.transaction.findFirst({
-      where: { id, tenantId }, // Garante que o ID pertence à empresa certa
+      where: { id, tenantId },
     });
 
     if (!transaction) {
@@ -36,7 +36,6 @@ export class TransactionsService {
   }
 
   update(id: string, updateTransactionDto: UpdateTransactionDto, tenantId: string) {
-    // O updateMany garante que só atualiza se o tenantId bater
     return this.prisma.transaction.updateMany({
       where: { id, tenantId },
       data: updateTransactionDto,
