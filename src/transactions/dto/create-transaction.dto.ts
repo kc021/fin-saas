@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsEnum, IsPositive, IsDateString, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsEnum, IsPositive, IsDateString, IsString, IsUUID, IsOptional } from 'class-validator';
 
 export enum TransactionType {
   INCOME = 'INCOME',
@@ -16,11 +16,22 @@ export class CreateTransactionDto {
   @IsEnum(TransactionType, { message: 'Tipo inválido (INCOME ou EXPENSE)' })
   type: TransactionType;
 
-  @IsDateString({}, { message: 'Data inválida' })
-  date: string;
+  // 👇 CORREÇÃO AQUI: Mudamos de 'date' para 'dueDate' para bater com o banco
+  @IsDateString({}, { message: 'Data de vencimento inválida' })
+  dueDate: string;
+
+  // Campo opcional para data de pagamento (se já foi pago)
+  @IsOptional()
+  @IsDateString({}, { message: 'Data de pagamento inválida' })
+  payDate?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'O ID da conta é obrigatório' })
   @IsUUID(undefined, { message: 'ID da conta inválido' })
   accountId: string;
+
+  // Adicionando Categoria também, pois é útil
+  @IsOptional()
+  @IsUUID(undefined, { message: 'ID da categoria inválido' })
+  categoryId?: string;
 }
