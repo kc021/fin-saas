@@ -1,40 +1,26 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsDateString, IsUUID, IsEnum } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsEnum, IsPositive, IsDateString, IsString, IsUUID } from 'class-validator';
 
 export enum TransactionType {
-    INCOME = 'INCOME',
-    EXPENSE = 'EXPENSE',
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
 }
 
 export class CreateTransactionDto {
-    @IsString()
-    @IsNotEmpty()
-    description: string;
+  @IsNotEmpty({ message: 'A descrição é obrigatória' })
+  description: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    amount: number;
+  @IsNumber({}, { message: 'O valor deve ser um número' })
+  @IsPositive({ message: 'O valor deve ser positivo' })
+  amount: number;
 
-    @IsEnum(TransactionType)
-    @IsNotEmpty()
-    type: TransactionType;
+  @IsEnum(TransactionType, { message: 'Tipo inválido (INCOME ou EXPENSE)' })
+  type: TransactionType;
 
-    @IsDateString()
-    @IsNotEmpty()
-    dueDate: string;
+  @IsDateString({}, { message: 'Data inválida' })
+  date: string;
 
-    @IsDateString()
-    @IsOptional()
-    payDate?: string;
-
-    @IsUUID()
-    @IsNotEmpty()
-    tenantId: string;
-
-    @IsUUID()
-    @IsNotEmpty()
-    accountId: string;
-
-    @IsUUID()
-    @IsOptional()
-    categoryId?: string;
+  @IsString()
+  @IsNotEmpty({ message: 'O ID da conta é obrigatório' })
+  @IsUUID(undefined, { message: 'ID da conta inválido' })
+  accountId: string;
 }
